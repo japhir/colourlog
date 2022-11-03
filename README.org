@@ -1,3 +1,5 @@
+[[https://zenodo.org/badge/latestdoi/561347459][https://zenodo.org/badge/561347459.svg]]
+
 * colourlog: generate plots of colourlogs from core photographs
 Ilja J. Kocken
 
