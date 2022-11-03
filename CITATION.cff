@@ -4,6 +4,11 @@ message: >-
   If you use this software, please cite it using the
   metadata from this file.
 type: software
+identifiers:
+  - description: The concept DOI for the collection containing all versions of the Citation File Format.
+    type: doi
+    value: "10.5281/zenodo.7277859"
+doi: 10.5281/zenodo.7277859
 authors:
   - given-names: Ilja Japhir
     family-names: Kocken
