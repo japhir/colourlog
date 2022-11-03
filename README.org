@@ -16,4 +16,4 @@ Kocken, I. J. (2022). colourlog: generate plots of colourlogs from core photogra
 Zeeden, C., Hilgen, F., Röhl, U., Seelos, K., & Lourens, L. (2015). Sediment color as a tool in cyclostratigraphy – a new application for improved data acquisition and correction from drill cores. /Newsletters on Stratigraphy/, /48/ (3), 277–285. https://doi.org/10.1127/nos/2015/0064
 
 * Publications that use this approach
-Cramwinckel, M. J., Huber, M., Kocken, I. J., Agnini, C., Bijl, P. K., Bohaty, S. M., Frieling, J., Goldner, A., Hilgen, F. J., Kip, E. L., Peterse, F., Ploeg, R. van der, Röhl, U., Schouten, S., &amp; Sluijs, A. (2018). Synchronous tropical and polar temperature evolution in the Eocene. /Nature/, /559/ (7714), 382–386. https://doi.org/10.1038/s41586-018-0272-2
+Cramwinckel, M. J., Huber, M., Kocken, I. J., Agnini, C., Bijl, P. K., Bohaty, S. M., Frieling, J., Goldner, A., Hilgen, F. J., Kip, E. L., Peterse, F., Ploeg, R. van der, Röhl, U., Schouten, S., & Sluijs, A. (2018). Synchronous tropical and polar temperature evolution in the Eocene. /Nature/, /559/ (7714), 382–386. https://doi.org/10.1038/s41586-018-0272-2
