@@ -10,6 +10,8 @@ The code and explanation for the analysis is in [[file:2022_colourlog.Rmd]], whi
 * Cite
 If you use this software, please cite it using the metadata in [[file:CITATION.cff]].
 
+Kocken, I. J. (2022). colourlog: generate plots of colourlogs from core photographs (v0.0.1). Zenodo. https://doi.org/10.5281/zenodo.7277860
+
 * References
 Zeeden, C., Hilgen, F., Röhl, U., Seelos, K., & Lourens, L. (2015). Sediment color as a tool in cyclostratigraphy – a new application for improved data acquisition and correction from drill cores. /Newsletters on Stratigraphy/, /48/ (3), 277–285. https://doi.org/10.1127/nos/2015/0064
 
