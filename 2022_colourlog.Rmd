@@ -1,0 +1,370 @@
+---
+title: "colourlog: generate plots of colourlogs from core photographs"
+author:
+- name : Ilja J. Kocken
+  affiliation: Utrecht University
+  email: i.j.kocken@uu.nl
+  orcid: 0000-0003-2196-8718
+output: html_document
+<!-- bibliography: TODO.bib -->
+<!-- csl: style.cls -->
+---
+
+```{r setup, include=FALSE}
+options(
+  crayon.enabled = FALSE
+)
+knitr::opts_chunk$set(
+  comment = '#', fig.width = 6, fig.height = 6, strip.white = TRUE
+)
+```
+
+Here we try to generate an image of the colourlog that you have generated based
+on core photographs!
+
+# assumed pre-work
+This script assumes that you have already successfully applied the DeCrack
+routine in Matlab, which gets colour information from the core photograph after
+removing cracks [@cite:Zeeden2015].
+
+In short, the procedure is to first clean up the core photographs manually (in
+Photoshop or similar).
+1. download the core photographs from the [janus database](http://iodp.tamu.edu/janusweb/imaging/photo.shtml)
+2. split them into sections that you manually align, so that the image
+   distortion is minimized
+3. clean up each section, by colouring bioturbation signs and water sample foam
+   black
+4. run the DeCrack matlab script in matlab
+
+# load necessary libraries
+```{r}
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(ggtextures)
+library(patchwork)
+```
+
+# read in the decracked data
+The output of the matlab script is stored in .dat files where
+1 is unaltered data
+2 is after removed cracks data
+
+## create a list of column names
+Column names are described in table 1 in [@cite:Zeeden2015].
+
+```{r}
+names <- c("distance_from_core_top1",
+           "mean_greyscale_values1",
+           "standard_deviation_of_greyscale_values1",
+           "median_of_greyscale_values1",
+           "mean_red_values1",
+           "standard_deviation_of_red_values1",
+           "median_of_red_values1",
+           "mean_green_values1",
+           "standard_deviation_of_green_values1",
+           "median_of_green_values1",
+           "mean_blue_values1",
+           "standard_deviation_of_blue_values1",
+           "median_of_blue_values1",
+           "distance_from_core_top2",
+           "mean_greyscale_values2",
+           "standard_deviation_of_greyscale_values2",
+           "median_of_greyscale_values2",
+           "mean_red_values2",
+           "standard_deviation_of_red_values2",
+           "median_of_red_values2",
+           "mean_green_values2",
+           "standard_deviation_of_green_values2",
+           "median_of_green_values2",
+           "mean_blue_values2",
+           "standard_deviation_of_blue_values2",
+           "median_of_blue_values2")
+```
+
+## read in a single output file to see if it works with these column names
+```{r}
+dat1 <- read_delim("dat/decrackoutput/959A30X-1.dat",
+                   delim = ' ',
+                   trim_ws = TRUE,
+                   col_names = names)
+glimpse(dat1)
+```
+
+That seems to work!
+
+## List all the datafiles
+```{r}
+path <- "dat/decrackoutput"
+
+files <- list.files(path,
+                    pattern = '.dat$',
+                    full.names = FALSE)
+```
+
+## Get metadata from filename
+We create a [tibble](https://tibble.tidyverse.org/)/dataframe with one file per
+line, and extract all the relevant metadata from the filename into separate
+columns.
+
+```{r}
+main <- tibble(file=files) |>
+  mutate(site = str_extract(file, "^\\d+") |>
+           parse_integer(),
+         hole = str_extract(file, "[A-D]"),
+         type = str_extract(file, "X"),
+         core = str_extract(file, "\\d+X-") |>
+           str_replace("X-", "") |>
+           parse_integer(),
+         section = str_extract(file, "-\\d+") |>
+           str_replace("-", "") |>
+           parse_integer())
+main
+```
+
+## Read colour data
+This now uses the above tibble and reads in the file like we did for `dat1`
+above. Except now each row is a [nested tibble](https://tidyr.tidyverse.org/articles/nest.html).
+
+```{r}
+main <- main |>
+  mutate(data = map(file,
+                   ~ read_delim(paste0(path, '/', .x),
+                                delim = " ",
+                                trim_ws = TRUE,
+                                col_names = names)))
+```
+
+We unnest the data so that we go back to a flat tibble, where all the files are
+listed below each other. Note that the rows that were unique to each file are
+now repeated as many times as there are data in the file.
+
+```{r}
+flat <- main |> unnest(cols=data)
+flat
+```
+
+Let's take a quick look at what we have now:
+
+```{r}
+flat |>
+  ggplot(aes(x = mean_greyscale_values2, y = distance_from_core_top2)) +
+  geom_path() +
+  scale_y_reverse() +
+  facet_grid(cols = vars(section))
+```
+
+Good! We have the colour information for each section!
+
+# load the core images
+First we list all the cropped section images, and get their metadata from the filenames.
+
+```{r}
+imgs <- tibble(file = list.files("dat/croppedsections", pattern = "*.png")) |>
+  # this is the second time we do this, should probably make it a function
+  mutate(site=str_extract(file, "^\\d+") |>
+           parse_integer(),
+         hole=str_extract(file, "[A-D]"),
+         type=str_extract(file, "X"),
+         core=str_extract(file, "\\d+X-") |>
+           str_replace("X-", "") |>
+           parse_integer(),
+         section=str_extract(file, "-\\d+") |>
+           str_replace("-", "") |>
+           parse_integer())
+```
+
+Note that there are just a few section images here, so we can easily plot them
+all, but if you use more than this you should shrink them first before trying
+to plot them, otherwise your R session might crash! See [my corepics repository](https://github.com/japhir/corepics).
+
+```{r fig.width = 3, fig.height = 8}
+imgs |>
+  ## slice(1) |> # try it out for a single image
+  ggplot(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1.50)) +
+  # here we turn the filename into the filepath, relative to this project
+  geom_textured_rect(aes(image = paste0("dat/croppedsections/", file))) +
+  facet_grid(cols = vars(section), rows = vars(core))
+```
+
+Currently we do not have the information for the height/depth of these images, however.
+
+# load section depths
+
+We need to now link the colour log data to depth information, and ultimately to age information.
+So we first read in the metadata, which we downloaded from [Janus database](https://web.iodp.tamu.edu/janusweb/coring_summaries/coresumm.cgi).
+
+```{r}
+coresumm <- read_tsv("dat/coresumm.tsv")
+coresumm
+```
+
+This still lacks the newest depth scale, however, so it's better to use a custom file.
+
+```{r}
+coresumm <- read_csv("dat/SectionSummary.csv")
+```
+
+Now that we have the metadata, we can attach it to the images.
+
+```{r}
+imgs <- imgs |>
+  left_join(coresumm |>
+              mutate(Sect = str_replace(Sect, "CC", "8") |> parse_integer()),
+            by = c('site' = 'Site',
+                   'hole' = 'Hole',
+                   'core' = 'Core',
+                   'type' = 'Type',
+                   'section' = 'Sect'))
+```
+
+and make proper plots of our sections
+
+```{r fig.width = 1}
+corepics <- imgs |>
+  ## slice(1) |> # try it out for a single image
+  ggplot(aes(xmin = 0, xmax = 1, ymin = bot_depth, ymax = top_depth)) +
+  # here we turn the filename into the filepath, relative to this project
+  geom_textured_rect(aes(image = paste0("dat/croppedsections/", file))) +
+  facet_grid(cols = vars(hole))
+corepics
+```
+
+# agemodel
+But if we want to plot it against age, we need to apply an agemodel.
+
+Read in the agemodel and plot it.
+
+Unfortunately the agemodel isn't published yet, so here's a very low-res fake agemodel.
+
+```{r}
+## agem <- read_excel("dat/Agemodel.xlsx")
+agem <- tribble( ~ depth_mbsf, ~ Age_GTS12,
+                290, 20,
+                315, 22,
+                323, 22.7,
+                330, 24,
+                350, 25)
+agem |>
+  ggplot(aes(x = Age_GTS12, y = depth_mbsf)) +
+  ## geom_smooth(span = .05) +
+  geom_line() +
+  geom_point() +
+  # annotate cores we have pics for
+  geom_rug(aes(y = top_depth),
+           colour = "grey",
+           inherit.aes = FALSE,
+           data = imgs) +
+  scale_y_reverse()
+```
+
+Apply the agemodel. I'm assuming that the top_age and bot_age are in mbsf,
+because the rmcd column in the agemodel is empty!
+
+```{r}
+imgs <- imgs |>
+  mutate(top_age = approx(x = agem$depth_mbsf, y = agem$Age_GTS12,
+                          xout = top_depth)$y,
+         bot_age = approx(x = agem$depth_mbsf, y = agem$Age_GTS12,
+                      xout = bot_depth)$y)
+```
+
+Add the age information to the colourlog
+
+```{r}
+newflat <- flat |>
+  # tidylog is nice because it prints some messages about how the join went.
+  tidylog::left_join(coresumm |>
+                       mutate(Sect = str_replace(Sect, "CC", "8") |>
+                                parse_integer()),
+                     by = c('site' = 'Site',
+                            'hole' = 'Hole',
+                            'core' = 'Core',
+                            'type' = 'Type',
+                            'section' = 'Sect'))
+glimpse(newflat)
+```
+
+## calculate depth
+The above metadata gives us the depth of each top of the section, but our
+"samples" are obviously continuously spaced throughout each section.
+
+```{r}
+depthcalc <- newflat  %>%
+  # this is probably pseudocode: you need to double check what the column names in newflat are, and find
+  # the section depth (in mbsf) and the top depth (in cm).
+  mutate(depth = top_depth + distance_from_core_top2 * 0.01)
+
+# inspect the new depth
+depthcalc %>%
+  select(top_depth, distance_from_core_top2, depth) |>
+  tail()
+```
+
+We now have our entire colourlog and the associated core depth!
+
+## apply the agemodel
+
+Make sure you know which column holds the age (is it in ka or in Ma?) and which one has the depth.
+
+```{r}
+depthcalc <- depthcalc |>
+  mutate(age = approx(agem$depth_mbsf, agem$Age_GTS12,
+                      xout = depth)$y)
+```
+
+# calculate colour
+The colourlog output is not a colour that R knows how to plot yet, so we have
+to convert the separate red, green, and blue (RGB) values into a single
+character that defines the colour (as you may recognize from Photoshop).
+
+```{r}
+colourlog <- depthcalc |>
+  # play around with the maxColorValue here! I think it should be 255, from memory.
+  mutate(colour = rgb(mean_red_values2,
+                      mean_green_values2,
+                      mean_blue_values2,
+                      maxColorValue = 255))
+```
+
+
+Create a plot to show data
+
+```{r fig.width = 4}
+colourplot <- colourlog |>
+  ## arrange(depth) |>
+  ggplot(aes(y = depth,
+             x = mean_greyscale_values2,
+             colour= colour)) +
+  geom_path(colour = "black") +
+  geom_point() +
+  geom_rug(aes(y = depth, colour = colour), sides = 'l') +
+  scale_colour_identity() +
+  scale_y_reverse()
+
+colourplot
+```
+
+Save plot and data
+```{r fig.width = 4.5}
+(corepics +
+  coord_cartesian(ylim = c(300, 340)) +
+   labs(y = "Depth (mbsf)")) +
+  (Colourplot +
+     labs(x = "Mean grayscale value") +
+     coord_cartesian(ylim = c(300, 340)) +
+     theme(axis.title.y = element_blank(),
+           axis.text.y = element_blank(),
+           axis.ticks.y = element_blank())) +
+  plot_layout(ncol = 2, widths = c(.1, .9))
+
+ggsave('imgs/colouranalysis.pdf', width = 10, height = 25, units = c('cm'))
+
+write_csv(colourlog, file = "out/colourdata.csv")
+```
+
+To do the same against depth, we've applied the agemodel already to both the core photographs and to the data, so this shouldn't be too much trouble!
+
+# references
+
+Zeeden, C., Hilgen, F., Röhl, U., Seelos, K., & Lourens, L. (2015). Sediment color as a tool in cyclostratigraphy – a new application for improved data acquisition and correction from drill cores. Newsletters on Stratigraphy, 48(3), 277–285. https://doi.org/10.1127/nos/2015/0064
