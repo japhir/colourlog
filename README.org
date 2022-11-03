@@ -1,10 +1,8 @@
-# TODO: binder button
-# TODO: Zenodo badge
 * colourlog: generate plots of colourlogs from core photographs
 Ilja J. Kocken
 
 This is the R script to convert output from the DeCrack matlab script by Zeeden et al., 2015 to colour information, link it back to core depth, apply an agemodel, and create figures.
 
-The code and explanation for the analysis is in [[file:2022_colourlog.Rmd]].
+The code and explanation for the analysis is in [[file:2022_colourlog.Rmd]], which is rendered as a nice HTML file [[https://htmlpreview.github.io/?https://github.com/japhir/colourlog/blob/main/2022_colourlog.html][here]].
 
 Zeeden, C., Hilgen, F., Röhl, U., Seelos, K., & Lourens, L. (2015). Sediment color as a tool in cyclostratigraphy – a new application for improved data acquisition and correction from drill cores. Newsletters on Stratigraphy, 48(3), 277–285. https://doi.org/10.1127/nos/2015/0064
