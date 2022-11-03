@@ -291,8 +291,7 @@ The above metadata gives us the depth of each top of the section, but our
 
 ```{r}
 depthcalc <- newflat  %>%
-  # this is probably pseudocode: you need to double check what the column names in newflat are, and find
-  # the section depth (in mbsf) and the top depth (in cm).
+  # add the section depth (in mbsf) and the top depth (in cm).
   mutate(depth = top_depth + distance_from_core_top2 * 0.01)
 
 # inspect the new depth
