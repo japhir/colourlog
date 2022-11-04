@@ -200,43 +200,50 @@ coresumm <- read_tsv("dat/coresumm.tsv")
 coresumm
 ```
 
-This still lacks the newest depth scale, however, so it's better to use a custom file.
+<!-- This still lacks the newest depth scale, however, so it's better to use a custom file. -->
 
-```{r}
-coresumm <- read_csv("dat/SectionSummary.csv")
-```
+<!-- ```{r} -->
+<!-- coresumm <- read_csv("dat/SectionSummary.csv") -->
+<!-- ``` -->
 
 Now that we have the metadata, we can attach it to the images.
 
 ```{r}
 imgs <- imgs |>
   tidylog::left_join(coresumm |>
-                       mutate(Sect = str_replace(Sect, "CC", "8") |>
+                       mutate(Sc = ifelse(str_detect(Sc, "CC"), "8", Sc) |>
                                 parse_integer()),
                      by = c('site' = 'Site',
-                            'hole' = 'Hole',
-                            'core' = 'Core',
-                            'type' = 'Type',
-                            'section' = 'Sect'))
+                            'hole' = 'H',
+                            'core' = 'Cor',
+                            'type' = 'T',
+                            'section' = 'Sc'))
 ```
 
 and make proper plots of our sections
 
-```{r fig.width = 1}
+```{r fig.width = 2}
 corepics <- imgs |>
   ## slice(1) |> # try it out for a single image
   ggplot(aes(xmin = 0, xmax = 1,
-             ymin = `Bottom depth CSF-B (m)`,
-             ymax = `Top depth CSF-B (m)`)) +
-  # here we turn the filename into the filepath, relative to this project
-  geom_textured_rect(aes(image = paste0("dat/croppedsections/", file))) +
+             ymin = `Top(mbsf)` + `LL(m)`,
+             ymax = `Top(mbsf)`)) +
   scale_y_reverse() +
+  # here we turn the filename into the filepath, relative to this project
+  geom_textured_rect(aes(image = paste0("dat/croppedsections/", file)),
+                     # below settings are essential so that section images get
+                     # stretched!
+                     nrow = 1, ncol = 1,
+                     img_width = unit(1, "null"),
+                     img_height = unit(1, "null"),
+                     interpolate = FALSE) +
   facet_grid(cols = vars(hole)) +
+  labs(y = "Depth (mbsf)")
+corepics +
+  # show the core and section number
   geom_text(aes(x = 1.2, label = paste0(core, "-", section),
-                y = `Top depth CSF-B (m)` +
-                  0.5 * (`Bottom depth CSF-B (m)` - `Top depth CSF-B (m)`)),
+                y = `Top(mbsf)` + 0.5 * `LL(m)`),
             size = 2, hjust = 1)
-corepics
 ```
 
 # agemodel
@@ -249,6 +256,7 @@ Unfortunately the agemodel isn't published yet, so here's a very low-res fake ag
 ```{r}
 ## agem <- read_excel("dat/Agemodel.xlsx")
 agem <- tribble( ~ depth_mbsf, ~ Age_GTS12,
+                260, 15,
                 290, 20,
                 315, 22,
                 323, 22.7,
@@ -260,7 +268,7 @@ agem |>
   geom_line() +
   geom_point() +
   # annotate cores we have pics for
-  geom_rug(aes(y = top_depth),
+  geom_rug(aes(y = `Top(mbsf)`),
            colour = "grey",
            inherit.aes = FALSE,
            data = imgs) +
@@ -273,9 +281,9 @@ because the rmcd column in the agemodel is empty!
 ```{r}
 imgs <- imgs |>
   mutate(top_age = approx(x = agem$depth_mbsf, y = agem$Age_GTS12,
-                          xout = top_depth)$y,
+                          xout = `Top(mbsf)`)$y,
          bot_age = approx(x = agem$depth_mbsf, y = agem$Age_GTS12,
-                      xout = bot_depth)$y)
+                      xout = `Top(mbsf)` + `LL(m)`)$y)
 ```
 
 Add the age information to the colourlog
@@ -284,13 +292,13 @@ Add the age information to the colourlog
 newflat <- flat |>
   # tidylog is nice because it prints some messages about how the join went.
   tidylog::left_join(coresumm |>
-                       mutate(Sect = str_replace(Sect, "CC", "8") |>
+                       mutate(Sc = ifelse(str_detect(Sc, "CC"), "8", Sc) |>
                                 parse_integer()),
                      by = c('site' = 'Site',
-                            'hole' = 'Hole',
-                            'core' = 'Core',
-                            'type' = 'Type',
-                            'section' = 'Sect'))
+                            'hole' = 'H',
+                            'core' = 'Cor',
+                            'type' = 'T',
+                            'section' = 'Sc'))
 glimpse(newflat)
 ```
 
@@ -301,11 +309,11 @@ The above metadata gives us the depth of each top of the section, but our
 ```{r}
 depthcalc <- newflat  %>%
   # add the section depth (in mbsf) and the top depth (in cm).
-  mutate(depth = `Top depth CSF-B (m)` + distance_from_core_top2 * 0.01)
+  mutate(depth = `Top(mbsf)` + distance_from_core_top2 * 0.01)
 
 # inspect the new depth
 depthcalc %>%
-  select(`Top depth CSF-B (m)`, top_depth, distance_from_core_top2, depth) |>
+  select(`Top(mbsf)`, distance_from_core_top2, depth) |>
   tail()
 ```
 
