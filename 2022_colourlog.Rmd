@@ -184,6 +184,7 @@ imgs |>
   ggplot(aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1.50)) +
   # here we turn the filename into the filepath, relative to this project
   geom_textured_rect(aes(image = paste0("dat/croppedsections/", file))) +
+  scale_y_reverse() +
   facet_grid(cols = vars(section), rows = vars(core))
 ```
 
@@ -209,13 +210,14 @@ Now that we have the metadata, we can attach it to the images.
 
 ```{r}
 imgs <- imgs |>
-  left_join(coresumm |>
-              mutate(Sect = str_replace(Sect, "CC", "8") |> parse_integer()),
-            by = c('site' = 'Site',
-                   'hole' = 'Hole',
-                   'core' = 'Core',
-                   'type' = 'Type',
-                   'section' = 'Sect'))
+  tidylog::left_join(coresumm |>
+                       mutate(Sect = str_replace(Sect, "CC", "8") |>
+                                parse_integer()),
+                     by = c('site' = 'Site',
+                            'hole' = 'Hole',
+                            'core' = 'Core',
+                            'type' = 'Type',
+                            'section' = 'Sect'))
 ```
 
 and make proper plots of our sections
@@ -223,10 +225,17 @@ and make proper plots of our sections
 ```{r fig.width = 1}
 corepics <- imgs |>
   ## slice(1) |> # try it out for a single image
-  ggplot(aes(xmin = 0, xmax = 1, ymin = bot_depth, ymax = top_depth)) +
+  ggplot(aes(xmin = 0, xmax = 1,
+             ymin = `Bottom depth CSF-B (m)`,
+             ymax = `Top depth CSF-B (m)`)) +
   # here we turn the filename into the filepath, relative to this project
   geom_textured_rect(aes(image = paste0("dat/croppedsections/", file))) +
-  facet_grid(cols = vars(hole))
+  scale_y_reverse() +
+  facet_grid(cols = vars(hole)) +
+  geom_text(aes(x = 1.2, label = paste0(core, "-", section),
+                y = `Top depth CSF-B (m)` +
+                  0.5 * (`Bottom depth CSF-B (m)` - `Top depth CSF-B (m)`)),
+            size = 2, hjust = 1)
 corepics
 ```
 
@@ -292,11 +301,11 @@ The above metadata gives us the depth of each top of the section, but our
 ```{r}
 depthcalc <- newflat  %>%
   # add the section depth (in mbsf) and the top depth (in cm).
-  mutate(depth = top_depth + distance_from_core_top2 * 0.01)
+  mutate(depth = `Top depth CSF-B (m)` + distance_from_core_top2 * 0.01)
 
 # inspect the new depth
 depthcalc %>%
-  select(top_depth, distance_from_core_top2, depth) |>
+  select(`Top depth CSF-B (m)`, top_depth, distance_from_core_top2, depth) |>
   tail()
 ```
 
@@ -334,24 +343,40 @@ colourplot <- colourlog |>
   ## arrange(depth) |>
   ggplot(aes(y = depth,
              x = mean_greyscale_values2,
-             colour= colour)) +
-  geom_path(colour = "black") +
-  geom_point() +
+             colour= colour,
+             core = core, section = section)) +
+  # there are many nice ways to plot this data!
+  # this will just draw the familiar line
+  ## geom_line(colour = "black", orientation = "y") +
+  ## geom_point() +
+  # this makes it easier to see
+  ## geom_area(colour = "black", orientation = "y") +
+  # the rug is like a cleaned-up average colour log
   geom_rug(aes(y = depth, colour = colour), sides = 'l') +
+  # make the colours extend to the mean grayscale value
+  # this is a bit hacky because it's drawing segments for each step
+  # if you zoom in very far, you should increase the segment thickness
+  geom_segment(aes(x = 0, xend = mean_greyscale_values2,
+                   y = depth, yend = depth)) +
   scale_colour_identity() +
   scale_y_reverse()
-
 colourplot
 ```
 
 Save plot and data
 ```{r fig.width = 4.5}
+# make sure that corepics and colourplot have the same depth scale
 (corepics +
-  coord_cartesian(ylim = c(300, 340)) +
-   labs(y = "Depth (mbsf)")) +
-  (Colourplot +
+  coord_cartesian(ylim = c(312, 274)) +
+   labs(y = "Depth (mbsf)") +
+   theme(axis.title.x = element_blank(),
+         axis.text.x = element_blank(),
+         axis.ticks.x = element_blank(),
+         panel.grid = element_blank())) +
+  (colourplot +
      labs(x = "Mean grayscale value") +
-     coord_cartesian(ylim = c(300, 340)) +
+     coord_cartesian(ylim = c(312, 274)) +
+     # remove the axis from the right part
      theme(axis.title.y = element_blank(),
            axis.text.y = element_blank(),
            axis.ticks.y = element_blank())) +
