@@ -1,17 +1,54 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
 cff-version: 1.2.0
-title: 'colourlog: generate plots of colourlogs from core photographs'
+title: >-
+  colourlog: generate plots of colourlogs from core
+  photographs
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
 type: software
-identifiers:
-  - description: The concept DOI for the collection containing all versions of the Citation File Format.
-    type: doi
-    value: "10.5281/zenodo.7277859"
-doi: 10.5281/zenodo.7277859
 authors:
   - given-names: Ilja Japhir
     family-names: Kocken
     email: i.j.kocken@uu.nl
     affiliation: Utrecht University
     orcid: 'https://orcid.org/0000-0003-2196-8718'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.7277859
+    description: Zenodo
+repository-code: 'https://github.com/japhir/colourlog'
+repository: 'https://zenodo.org/record/7290653'
+abstract: >-
+  This is the R script to convert output from the DeCrack
+  matlab script by Zeeden et al., 2015 to colour
+  information, link it back to core depth, apply an
+  agemodel, and create figures.
+keywords:
+  - colour
+  - DeCrack
+  - log
+  - stratigraphy
+license: GPL-3.0-or-later
+references:
+  - authors:
+    - family-names: Zeeden
+      given-names: Christiaan
+    - family-names: Hilgen
+      given-names: Frederik J.
+    - family-names: Röhl
+      given-names: Ursula
+    - family-names: Seelos
+      given-names: Klemens
+    - family-names: Lourens
+      given-names: Lucas J.
+    type: article
+    title: Sediment color as a tool in cyclostratigraphy – a new application for improved data acquisition and correction from drill cores.
+    journal: Newsletters on Stratigraphy
+    volume: 48
+    issue: 3
+    pages: 277--285
+    doi: 10.1127/nos/2015/0064
+  
